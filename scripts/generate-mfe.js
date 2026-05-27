@@ -108,6 +108,15 @@ export default defineConfig({
     target: 'esnext',
     minify: false,
     cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        // Gunakan nama file yang predictable (tanpa hash) agar shell app
+        // bisa memuat bundle via bundleUrl yang tetap.
+        entryFileNames: 'main.js',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name][extname]',
+      },
+    },
   },
   server: { port: ${port}, cors: true },
   preview: { port: ${port} },
@@ -991,12 +1000,16 @@ function updateRootFiles(name, port, stack) {
     let entry;
     if (stack === 'vue') {
       // Vue MFE: Web Component via script injection (useModuleFederation: false)
+      // Production: Vite build output = main.js (via rollupOptions.output.entryFileNames)
+      // Development: Vite dev server serve /src/main.ts sebagai ESM
       entry = `\n  ${name}: {
     name: '${remoteName}',
     remoteUrl: 'http://localhost:${port}/remoteEntry.js',
     remoteUrlSSR: 'http://${name}:${port}/remoteEntry.js',
-    bundleUrl: 'http://localhost:${port}/src/main.ts',
-    bundleUrlSSR: 'http://${name}:${port}/src/main.ts',
+    bundleUrl: 'http://localhost:${port}/main.js',
+    bundleUrlSSR: 'http://${name}:${port}/main.js',
+    devBundleUrl: 'http://localhost:${port}/src/main.ts',
+    devBundleUrlSSR: 'http://${name}:${port}/src/main.ts',
     exposedModule: './${pascal}App',
     webComponentTag: '${tagName}',
     useModuleFederation: false,
