@@ -227,8 +227,37 @@ EXPOSE ${port}
 }
 `;
 
+  // .gitignore — Vue best practices
+  const gitignore = `# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# production
+dist/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+`;
+
   // Write files
   fs.mkdirSync(path.join(base, 'src', 'components'), { recursive: true });
+  fs.writeFileSync(path.join(base, '.gitignore'), gitignore);
   fs.writeFileSync(path.join(base, 'package.json'), JSON.stringify(pkg, null, 2));
   fs.writeFileSync(path.join(base, 'vite.config.ts'), viteConfig);
   fs.writeFileSync(path.join(base, 'index.html'), indexHtml);
@@ -479,6 +508,42 @@ const ${pascal}App: React.FC<${pascal}AppProps> = ({ title }) => {
 export default ${pascal}App;
 `;
 
+  // .gitignore — Next.js / React best practices
+  const gitignore = `# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# testing
+coverage/
+
+# next.js
+.next/
+out/
+
+# production
+build/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+`;
+
   // Write files
   const pagesDir = path.join(base, 'src', 'pages');
   const componentsDir = path.join(base, 'src', 'components', `${pascal}App`);
@@ -486,6 +551,7 @@ export default ${pascal}App;
   fs.mkdirSync(pagesDir, { recursive: true });
   fs.mkdirSync(componentsDir, { recursive: true });
   fs.mkdirSync(publicDir, { recursive: true });
+  fs.writeFileSync(path.join(base, '.gitignore'), gitignore);
   fs.writeFileSync(path.join(base, 'package.json'), JSON.stringify(pkg, null, 2));
   fs.writeFileSync(path.join(base, 'next.config.js'), nextConfigJs);
   fs.writeFileSync(path.join(base, 'tsconfig.json'), tsconfig);
@@ -752,8 +818,37 @@ EXPOSE ${port}
 }
 `;
 
+  // .gitignore — Angular best practices
+  const gitignore = `# dependencies
+node_modules/
+
+# testing
+coverage/
+
+# production
+dist/
+tmp/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# angular
+.cache/
+*.js.map
+`;
+
   // Write files
   fs.mkdirSync(path.join(base, 'src', 'app'), { recursive: true });
+  fs.writeFileSync(path.join(base, '.gitignore'), gitignore);
   fs.writeFileSync(path.join(base, 'package.json'), JSON.stringify(pkg, null, 2));
   fs.writeFileSync(path.join(base, 'webpack.config.js'), webpackConfig);
   fs.writeFileSync(path.join(base, 'angular.json'), JSON.stringify(angularJson, null, 2));
