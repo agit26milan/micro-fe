@@ -917,10 +917,12 @@ function updateRootFiles(name, port, stack) {
         colorList.push(colors[colorList.length % colors.length]);
         pkg.scripts['dev'] = pkg.scripts['dev'].replace(/-c\s+\S+/, `-c ${colorList.join(',')}`);
       }
-      // Add command
+      // Add command — append di akhir, tidak perlu regex karena
+      // cmd sudah menyertakan kutip ("cd ... && npm run dev")
+      // dan string JSON juga sudah berakhiran ".
       const cmd = `"cd ${name} && npm run dev"`;
       if (!dev.includes(cmd)) {
-        pkg.scripts['dev'] = pkg.scripts['dev'].replace(/(")$/, ` ${cmd}$1`);
+        pkg.scripts['dev'] = pkg.scripts['dev'] + ` ${cmd}`;
       }
     }
 
