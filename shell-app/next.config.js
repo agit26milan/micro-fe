@@ -34,6 +34,9 @@ const nextConfig = {
       new NextFederationPlugin({
         name: 'shell',
         remotes: {
+          cart: isServer
+            ? `cart@http://cart:3005/_next/static/chunks/remoteEntry.js`
+            : `cart@http://localhost:3005/_next/static/chunks/remoteEntry.js`,
           mfe_profile: isServer
             ? `mfe_profile@http://mfe-profile:3004/remoteEntry.js`
             : `mfe_profile@http://localhost:3004/remoteEntry.js`,
@@ -84,7 +87,7 @@ const nextConfig = {
     const MFE_VUE_URL = process.env.NEXT_PUBLIC_MFE_VUE_URL || 'http://localhost:3002';
     const MFE_ANGULAR_URL = process.env.NEXT_PUBLIC_MFE_ANGULAR_URL || 'http://localhost:3003';
     const MFE_PROFILE_URL = process.env.NEXT_PUBLIC_MFE_PROFILE_URL || 'http://localhost:3004';
-
+    const MFE_CART_URL = process.env.NEXT_PUBLIC_MFE_CART_URL || 'http://localhost:3005';
     // Localhost fallbacks — browser always resolves via localhost (not Docker service names)
     const LOCALHOST_MFE_URLS = [
       'http://localhost:3000',
@@ -92,13 +95,15 @@ const nextConfig = {
       'http://localhost:3002',
       'http://localhost:3003',
       'http://localhost:3004',
+      'http://localhost:3005'
     ].join(' ');
 
+    
     const ContentSecurityPolicy = `
       default-src 'self';
       script-src 'self' 'unsafe-eval' 'unsafe-inline'
         ${MFE_REACT_URL} ${MFE_VUE_URL} ${MFE_ANGULAR_URL} ${MFE_PROFILE_URL}
-        ${LOCALHOST_MFE_URLS};
+        ${LOCALHOST_MFE_URLS} ${MFE_CART_URL};
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https: http://placehold.co;
       connect-src 'self'

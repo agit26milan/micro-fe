@@ -4,9 +4,9 @@
   "private": true,
   "description": "Micro Frontend Store — Next.js Shell + React/Vue/Angular MFEs",
   "scripts": {
-    "dev": "npx concurrently -n shell,react,vue,angular,profile,home -c cyan,blue,green,red,magenta,yellow \"cd shell-app && npm run dev\" \"cd mfe-react && npm run dev\" \"cd mfe-vue && npm run dev\" \"cd mfe-angular && npm run start\" \"cd mfe-profile && npm run dev \"",
+    "dev": "npx concurrently -n shell,react,vue,angular,profile,home,cart -c cyan,blue,green,red,magenta,yellow,white \"cd shell-app && npm run dev\" \"cd mfe-react && npm run dev\" \"cd mfe-vue && npm run dev\" \"cd mfe-angular && npm run start\" \"cd mfe-profile && npm run dev\" \"cd cart && npm run dev\"",
     "dev:docker": "docker compose up --build",
-    "build": "npm run build:shell && npm run build:react && npm run build:vue && npm run build:angular && npm run build:mfe-profile && npm run build:home",
+    "build": "npm run build:shell && npm run build:react && npm run build:vue && npm run build:angular && npm run build:mfe-profile && npm run build:home && npm run build:cart",
     "build:shell": "cd shell-app && npm run build",
     "build:react": "cd mfe-react && npm run build",
     "build:vue": "cd mfe-vue && npm run build",
@@ -14,7 +14,9 @@
     "install:all": "cd shell-app && npm install && cd ../mfe-react && npm install && cd ../mfe-vue && npm install && cd ../mfe-angular && npm install && cd ../mfe-profile && npm install",
     "generate:mfe": "node scripts/generate-mfe.js",
     "dev:mfe-profile": "cd mfe-profile && npm run dev",
-    "build:mfe-profile": "cd mfe-profile && npm run build"
+    "build:mfe-profile": "cd mfe-profile && npm run build",
+    "dev:cart": "cd cart && npm run dev",
+    "build:cart": "cd cart && npm run build"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

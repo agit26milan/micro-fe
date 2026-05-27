@@ -59,6 +59,16 @@ export const ROUTE_STRATEGY: Record<string, RouteConfig> = {
     seo: false,
     auth: true,
   },
+   '/cart': {
+    strategy: 'csr',
+    seo: true, // SEO via metadata dari shell
+    prefetchMFE: ['cart'],
+  },
+  '/cart/[slug]': {
+    strategy: 'ssr',
+    seo: true,
+    prefetchMFE: ['cart'],
+  },
 };
 
 /**

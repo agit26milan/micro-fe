@@ -3,8 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Navigation from './Navigation';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const {push} = useRouter()
+  const goToCart = () => {
+    push('cart')
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -29,6 +35,7 @@ export default function Header() {
             </svg>
           </button>
           <button
+            onClick={goToCart}
             className="text-gray-600 hover:text-gray-900 transition-colors relative"
             aria-label="Cart"
           >

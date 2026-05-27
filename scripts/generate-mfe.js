@@ -247,177 +247,260 @@ EXPOSE ${port}
   fs.writeFileSync(path.join(base, 'src', 'App.vue'), appVue);
 }
 
-// ─── Template: React MFE ───
+// ─── Template: React (Next.js) MFE ───
 function generateReact(name, port) {
   const base = path.join(process.cwd(), name);
+  const remoteName = name.replace(/-/g, '_');
+  const pascal = toPascalCase(name);
 
-  // package.json
+  // package.json — Next.js with Module Federation (aligned with mfe-react)
   const pkg = {
     name,
     version: '0.1.0',
     private: true,
-    type: 'module',
-    scripts: { dev: 'vite', build: 'vite build', preview: 'vite preview' },
-    dependencies: { react: '^18.2.0', 'react-dom': '^18.2.0' },
+    scripts: {
+      dev: `next dev -p ${port}`,
+      build: 'next build',
+      start: `next start -p ${port}`,
+    },
+    dependencies: {
+      '@module-federation/nextjs-mf': '^8.8.67',
+      'enhanced-resolve': '^5.17.1',
+      'next': '^15.5.18',
+      'react': '^19.0.0',
+      'react-dom': '^19.0.0',
+      'webpack': '^5.95.0',
+    },
     devDependencies: {
-      '@vitejs/plugin-react': '^4.2.0',
-      'vite': '^5.0.0',
-      '@originjs/vite-plugin-federation': '^1.3.0',
-      'typescript': '^5.3.0',
-      '@types/react': '^18.2.0',
-      '@types/react-dom': '^18.2.0',
+      '@types/node': '^20',
+      '@types/react': '^19',
+      '@types/react-dom': '^19',
+      'typescript': '^5',
+    },
+    overrides: {
+      'enhanced-resolve': '5.17.1',
     },
   };
 
-  // vite.config.ts
-  const viteConfig = `import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import federation from '@originjs/vite-plugin-federation';
+  // next.config.js — Module Federation with conditional shared deps
+  const nextConfigJs = `process.env.NEXT_PRIVATE_LOCAL_WEBPACK = 'true';
 
-export default defineConfig({
-  plugins: [
-    react(),
-    federation({
-      name: '${name.replace(/-/g, '_')}',
-      filename: 'remoteEntry.js',
-      exposes: {
-        './${toPascalCase(name)}App': './src/App.tsx',
-      },
-      shared: {
-        react: { singleton: true, requiredVersion: '^18.0.0' },
-        'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
-      },
-    }),
-  ],
-  build: {
-    target: 'esnext',
-    minify: false,
-    cssCodeSplit: false,
+const { NextFederationPlugin } = require('@module-federation/nextjs-mf');
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: __dirname,
+
+  // Allow cross-origin requests from shell app or other dev machines/hosts
+  allowedDevOrigins: (process.env.ALLOWED_DEV_ORIGINS || '*')
+    .split(',')
+    .map(s => s.trim()),
+
+  // Explicitly bind to all interfaces so both localhost and network IP work
+  server: {
+    host: '0.0.0.0',
+    port: ${port},
   },
-  server: { port: ${port}, cors: true },
-  preview: { port: ${port} },
-});`;
 
-  // index.html
-  const indexHtml = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${toTitle(name)} MFE — React</title>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-</html>`;
+  webpack(config, { isServer }) {
+    const sharedDeps = isServer
+      ? {}
+      : {
+          react: { singleton: true, requiredVersion: '^19.0.0' },
+          'react-dom': { singleton: true, requiredVersion: '^19.0.0' },
+        };
 
-  // src/main.tsx
-  const mainTsx = `import React from 'react';
-import ReactDOM from 'react-dom/client';
+    config.plugins.push(
+      new NextFederationPlugin({
+        name: '${remoteName}',
+        filename: 'static/chunks/remoteEntry.js',
+        exposes: {
+          './${pascal}App': './src/components/${pascal}App/index.tsx',
+        },
+        shared: sharedDeps,
+        extraOptions: {
+          skipSharingNextInternals: true,
+        },
+      })
+    );
+    return config;
+  },
 
-// Standalone bootstrap
-const rootEl = document.getElementById('root');
-if (rootEl) {
-  const { default: App } = await import('./App');
-  ReactDOM.createRoot(rootEl).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-}
-`;
-
-  // src/App.tsx
-  const appTsx = `import React from 'react';
-
-interface ${toPascalCase(name)}AppProps {
-  title?: string;
-}
-
-const ${toPascalCase(name)}App: React.FC<${toPascalCase(name)}AppProps> = ({ title }) => {
-  return (
-    <div className="${name}-app">
-      <h1>{title || '${toTitle(name)} MFE'}</h1>
-      <p>React Micro Frontend — powered by Vite + Module Federation</p>
-    </div>
-  );
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
+        ],
+      },
+    ];
+  },
 };
 
-export default ${toPascalCase(name)}App;
+module.exports = nextConfig;
 `;
 
-  // tsconfig.json
+  // tsconfig.json — with path aliases like mfe-react
   const tsconfig = JSON.stringify({
     compilerOptions: {
-      target: 'ES2020',
-      module: 'ESNext',
-      moduleResolution: 'bundler',
+      target: 'ES2017',
+      lib: ['dom', 'dom.iterable', 'esnext'],
+      allowJs: true,
+      skipLibCheck: true,
       strict: true,
-      jsx: 'react-jsx',
+      noEmit: true,
+      esModuleInterop: true,
+      module: 'esnext',
+      moduleResolution: 'bundler',
       resolveJsonModule: true,
       isolatedModules: true,
-      esModuleInterop: true,
-      lib: ['ES2020', 'DOM'],
-      skipLibCheck: true,
-      noEmit: true,
+      jsx: 'preserve',
+      incremental: true,
+      paths: {
+        '@/*': ['./src/*'],
+      },
     },
-    include: ['src'],
+    include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '.next/types/**/*.ts'],
+    exclude: ['node_modules'],
   }, null, 2);
 
-  // Dockerfile (React: multi-stage Node build + standalone)
-  const dockerfile = `FROM node:20-alpine AS builder
+  // Dockerfile — multi-stage with standalone runner (like mfe-react)
+  const dockerfile = `FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine AS runner
-COPY --from=builder /app/dist /usr/share/nginx/html
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+USER nextjs
+
 EXPOSE ${port}
+ENV PORT ${port}
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
 `;
 
-  // nginx.conf (React)
+  // nginx.conf — reverse proxy to Node.js runner (like mfe-react)
   const nginxConf = `server {
   listen ${port};
   server_name localhost;
   root /usr/share/nginx/html;
   index index.html;
 
+  # CORS — izinkan shell app mengakses remote entry
   add_header Access-Control-Allow-Origin "*" always;
   add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
   add_header Access-Control-Allow-Headers "Content-Type" always;
 
+  # Cache static assets agresif
   location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff2)$ {
     expires 1y;
     add_header Cache-Control "public, immutable";
     add_header Access-Control-Allow-Origin "*";
   }
 
+  # remoteEntry.js — NO cache! Selalu fresh
   location ~* remoteEntry\\.js$ {
     expires -1;
     add_header Cache-Control "no-cache, no-store, must-revalidate";
     add_header Access-Control-Allow-Origin "*";
   }
 
+  # SPA fallback
   location / {
     try_files $uri $uri/ /index.html;
   }
 }
 `;
 
+  // next-env.d.ts
+  const nextEnvDts = `/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/pages/api-reference/config/typescript for more information.
+`;
+
+  // src/pages/_app.tsx
+  const appTsx = `import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />;
+}
+`;
+
+  // src/pages/index.tsx — standalone demo page
+  const indexPage = `import type { NextPage } from 'next';
+import ${pascal}App from '../components/${pascal}App';
+
+const Home: NextPage = () => {
+  return <${pascal}App title="${toTitle(name)} MFE" />;
+};
+
+export default Home;
+`;
+
+  // src/components/{Pascal}App/index.tsx — exposed MFE component
+  const componentTsx = `import React from 'react';
+
+interface ${pascal}AppProps {
+  title?: string;
+}
+
+const ${pascal}App: React.FC<${pascal}AppProps> = ({ title }) => {
+  return (
+    <div className="${name}-app">
+      <h1>{title || '${toTitle(name)} MFE'}</h1>
+      <p>Next.js Micro Frontend — powered by Module Federation</p>
+      <style jsx>{\`
+        .${name}-app {
+          font-family: var(--font-sans, system-ui);
+          color: var(--color-text, #111);
+          padding: 1rem;
+        }
+      \`}</style>
+    </div>
+  );
+};
+
+export default ${pascal}App;
+`;
+
   // Write files
-  fs.mkdirSync(path.join(base, 'src', 'components'), { recursive: true });
+  const pagesDir = path.join(base, 'src', 'pages');
+  const componentsDir = path.join(base, 'src', 'components', `${pascal}App`);
+  fs.mkdirSync(pagesDir, { recursive: true });
+  fs.mkdirSync(componentsDir, { recursive: true });
   fs.writeFileSync(path.join(base, 'package.json'), JSON.stringify(pkg, null, 2));
-  fs.writeFileSync(path.join(base, 'vite.config.ts'), viteConfig);
-  fs.writeFileSync(path.join(base, 'index.html'), indexHtml);
+  fs.writeFileSync(path.join(base, 'next.config.js'), nextConfigJs);
   fs.writeFileSync(path.join(base, 'tsconfig.json'), tsconfig);
+  fs.writeFileSync(path.join(base, 'next-env.d.ts'), nextEnvDts);
   fs.writeFileSync(path.join(base, 'Dockerfile'), dockerfile);
   fs.writeFileSync(path.join(base, 'nginx.conf'), nginxConf);
-  fs.writeFileSync(path.join(base, 'src', 'main.tsx'), mainTsx);
-  fs.writeFileSync(path.join(base, 'src', 'App.tsx'), appTsx);
+  fs.writeFileSync(path.join(base, 'src', 'pages', '_app.tsx'), appTsx);
+  fs.writeFileSync(path.join(base, 'src', 'pages', 'index.tsx'), indexPage);
+  fs.writeFileSync(path.join(base, 'src', 'components', `${pascal}App`, 'index.tsx'), componentTsx);
 }
 
 // ─── Template: Angular MFE ───

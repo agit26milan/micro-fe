@@ -25,6 +25,7 @@ services:
       - mfe-react
       - mfe-vue
       - mfe-angular
+      - cart
     networks:
       - mfe-network
     restart: unless-stopped
@@ -59,7 +60,8 @@ services:
       - NEXT_PUBLIC_MFE_VUE_URL=${MFE_VUE_PUBLIC_URL:-http://mfe-vue:3002}
       - NEXT_PUBLIC_MFE_ANGULAR_URL=${MFE_ANGULAR_PUBLIC_URL:-http://mfe-angular:3003}
       - NEXT_PUBLIC_API_URL=${API_URL:-http://api:4000}
-      - NEXT_PUBLIC_SITE_URL=${SITE_URL:-https://yourdomain.com}
+      - NEXT_PUBLIC_SITE_URL=${SITE_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_MFE_CART_URL:-http://cart:3005
     networks:
       - mfe-network
     restart: unless-stopped
@@ -67,6 +69,18 @@ services:
   # ── React MFE ──
   mfe-react:
     image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/mfe-react:${VERSION:-latest}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - mfe-network
+    restart: unless-stopped
+  # ── Cart MFE ──
+  cart:
+    image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/cart:${VERSION:-latest}
     deploy:
       replicas: 2
       resources:

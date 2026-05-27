@@ -85,4 +85,12 @@ export const MFE_REGISTRY: Record<string, MFEConfig> = {
     ssr: false,
     prefetch: false,
   },
-};
+
+  cart: {
+   name: 'cart',
+    remoteUrl: 'http://localhost:3005/_next/static/chunks/remoteEntry.js',
+    remoteUrlSSR: 'http://cart:3005/_next/static/chunks/remoteEntry.js',
+    exposedModule: './CartApp',
+    ssr: true,
+    prefetch: true,
+  },};
