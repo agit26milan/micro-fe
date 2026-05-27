@@ -1,0 +1,62 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="text-muted">Angular 21 MFE — Angular Elements (Custom Element)</p>
+    </div>
+    <div class="header-info">
+      <span class="user-badge">User: {{ userId || 'N/A' }}</span>
+      <span class="time-display">{{ currentTime }} Test agita</span>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div *ngFor="let stat of stats" class="stat-card" [class.trend-down]="stat.trend === 'down'">
+      <div class="stat-label">{{ stat.label }}</div>
+      <div class="stat-value">{{ stat.value }}</div>
+      <div class="stat-change">
+        <span [class.text-green]="stat.trend === 'up'" [class.text-red]="stat.trend === 'down'">
+          {{ stat.change }}
+        </span>
+        <span class="trend-icon">{{ stat.trend === 'up' ? '↑' : '↓' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Orders -->
+  <div class="orders-section">
+    <h2>Recent Orders</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Product</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orders">
+            <td class="font-mono">{{ order.id }}</td>
+            <td>{{ order.customer }}</td>
+            <td>{{ order.product }}</td>
+            <td class="font-mono">{{ formatPrice(order.amount) }}</td>
+            <td>
+              <span class="status-badge" [class.status-pending]="order.status === 'pending'"
+                    [class.status-completed]="order.status === 'completed'"
+                    [class.status-cancelled]="order.status === 'cancelled'">
+                {{ order.status }}
+              </span>
+            </td>
+            <td>{{ order.date }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

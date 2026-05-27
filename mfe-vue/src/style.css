@@ -1,0 +1,17 @@
+/* Base styles for the Vue MFE standalone page */
+:root {
+  --font-sans: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+}
+
+body {
+  margin: 0;
+  background: #f9fafb;
+  color: #1a1a2e;
+}
+
+#app {
+  max-width: 100%;
+  margin: 0 auto;
+  min-height: 100vh;
+}

@@ -1,0 +1,108 @@
+# ═══════════════════════════════════════════════════════════════
+# Docker Compose — Development
+# ═══════════════════════════════════════════════════════════════
+#
+# Usage:
+#   docker compose up --build          # Start all services
+#   docker compose up --build -d       # Start as daemon
+#   docker compose logs -f shell-app   # Follow specific service logs
+#   docker compose down                # Stop all services
+
+version: '3.9'
+
+services:
+  # ── Shell Application (Next.js) ──
+  shell-app:
+    build:
+      context: ./shell-app
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MFE_REACT_URL: http://mfe-react:3001
+        NEXT_PUBLIC_MFE_VUE_URL: http://mfe-vue:3002
+        NEXT_PUBLIC_MFE_ANGULAR_URL: http://mfe-angular:3003
+        NEXT_PUBLIC_MFE_PROFILE_URL: http://mfe-angular:3004
+        NEXT_PUBLIC_API_URL: http://api:4000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - mfe-react
+      - mfe-vue
+      - mfe-angular
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── React MFE (Catalog) ──
+  mfe-react:
+    build:
+      context: ./mfe-react
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/remoteEntry.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Vue MFE (Checkout) ──
+  mfe-vue:
+    build:
+      context: ./mfe-vue
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/assets/remoteEntry.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  mfe-profile:
+    build:
+      context: ./mfe-profile
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/assets/remoteEntry.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Angular MFE (Dashboard) ──
+  mfe-angular:
+    build:
+      context: ./mfe-angular
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  
+
+networks:
+  mfe-network:
+    driver: bridge

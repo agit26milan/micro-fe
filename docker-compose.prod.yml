@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════════
+# Docker Compose — Production (with Nginx + Scaling)
+# ═══════════════════════════════════════════════════════════════
+#
+# Usage:
+#   VERSION=$(git rev-parse --short HEAD) docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml down
+#   docker compose -f docker-compose.prod.yml logs -f
+
+version: '3.9'
+
+services:
+  # ── Nginx Reverse Proxy ──
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - shell-app
+      - mfe-react
+      - mfe-vue
+      - mfe-angular
+    networks:
+      - mfe-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Shell Application ──
+  shell-app:
+    image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/shell-app:${VERSION:-latest}
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_MFE_REACT_URL=${MFE_REACT_PUBLIC_URL:-http://mfe-react:3001}
+      - NEXT_PUBLIC_MFE_VUE_URL=${MFE_VUE_PUBLIC_URL:-http://mfe-vue:3002}
+      - NEXT_PUBLIC_MFE_ANGULAR_URL=${MFE_ANGULAR_PUBLIC_URL:-http://mfe-angular:3003}
+      - NEXT_PUBLIC_API_URL=${API_URL:-http://api:4000}
+      - NEXT_PUBLIC_SITE_URL=${SITE_URL:-https://yourdomain.com}
+    networks:
+      - mfe-network
+    restart: unless-stopped
+
+  # ── React MFE ──
+  mfe-react:
+    image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/mfe-react:${VERSION:-latest}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - mfe-network
+    restart: unless-stopped
+
+  # ── Vue MFE ──
+  mfe-vue:
+    image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/mfe-vue:${VERSION:-latest}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - mfe-network
+    restart: unless-stopped
+
+  # ── Angular MFE ──
+  mfe-angular:
+    image: ${REGISTRY_URL:-ghcr.io}/${REGISTRY_NAMESPACE:-org}/mfe-angular:${VERSION:-latest}
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - mfe-network
+    restart: unless-stopped
+
+networks:
+  mfe-network:
+    driver: overlay
+    attachable: true

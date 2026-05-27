@@ -1,0 +1,10 @@
+# robots.txt — MFE Store
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
