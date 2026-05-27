@@ -943,10 +943,13 @@ function updateRootFiles(name, port, stack) {
     let nc = fs.readFileSync(nextConfigPath, 'utf-8');
 
     // Add remote entry to NextFederationPlugin
+    // React (Next.js): remoteEntry di _next/static/chunks/
+    // Vue/Angular: remoteEntry di root /
+    const entryPath = stack === 'react' ? '_next/static/chunks/remoteEntry.js' : 'remoteEntry.js';
     const remoteEntry = `
           ${remoteName}: isServer
-            ? \`${remoteName}@http://${name}:${port}/remoteEntry.js\`
-            : \`${remoteName}@http://localhost:${port}/remoteEntry.js\`,`;
+            ? \`${remoteName}@http://${name}:${port}/${entryPath}\`
+            : \`${remoteName}@http://localhost:${port}/${entryPath}\`,`;
     nc = nc.replace(/(remotes:\s*\{)/, `$1${remoteEntry}`);
 
     // Add CSP env var and update script-src
@@ -1002,10 +1005,11 @@ function updateRootFiles(name, port, stack) {
   },`;
     } else if (stack === 'react') {
       // React MFE: Module Federation (loadRemote via enhanced runtime)
+      // React (Next.js) serves remoteEntry at _next/static/chunks/remoteEntry.js
       entry = `\n  ${name}: {
     name: '${remoteName}',
-    remoteUrl: 'http://localhost:${port}/remoteEntry.js',
-    remoteUrlSSR: 'http://${name}:${port}/remoteEntry.js',
+    remoteUrl: 'http://localhost:${port}/_next/static/chunks/remoteEntry.js',
+    remoteUrlSSR: 'http://${name}:${port}/_next/static/chunks/remoteEntry.js',
     exposedModule: './${pascal}App',
     ssr: true,
     prefetch: false,
